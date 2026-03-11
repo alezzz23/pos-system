@@ -1,0 +1,316 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== USER & AUTH ====================
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  role      String   @default("WAITER") // ADMIN, MANAGER, WAITER, KITCHEN, CASHIER
+  active    Boolean  @default(true)
+  avatar    String?
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  orders    Order[]
+  sessions  Session[]
+
+  @@map("users")
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  token        String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// ==================== PRODUCTS & MENU ====================
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  image       String?
+  active      Boolean   @default(true)
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  products    Product[]
+  parent      Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  parentId    String?
+  children    Category[] @relation("CategoryHierarchy")
+
+  @@map("categories")
+}
+
+model Product {
+  id              String    @id @default(uuid())
+  name            String
+  description     String?
+  price           Float
+  image           String?
+  active          Boolean   @default(true)
+  available       Boolean   @default(true)
+  preparationTime Int?      // in minutes
+  sortOrder       Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  categoryId      String
+  category        Category  @relation(fields: [categoryId], references: [id])
+  variants        ProductVariant[]
+  modifiers       ProductModifier[]
+  orderItems      OrderItem[]
+  inventoryItems  InventoryItem[]
+
+  @@map("products")
+}
+
+model ProductVariant {
+  id          String   @id @default(uuid())
+  productId   String
+  name        String   // e.g., "Small", "Medium", "Large"
+  price       Float    // additional price or base price
+  sku         String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItems  OrderItem[]
+
+  @@map("product_variants")
+}
+
+model ProductModifier {
+  id          String   @id @default(uuid())
+  productId   String
+  name        String   // e.g., "Extra Cheese", "No Onions"
+  price       Float    @default(0)
+  required    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_modifiers")
+}
+
+// ==================== TABLES & ORDERS ====================
+
+model Table {
+  id          String    @id @default(uuid())
+  number      String    @unique
+  capacity    Int       @default(4)
+  status      String    @default("AVAILABLE") // AVAILABLE, OCCUPIED, RESERVED, BILL_REQUESTED, CLEANING
+  positionX   Int       @default(0)  // For visual layout
+  positionY   Int       @default(0)
+  width       Int       @default(100)
+  height      Int       @default(100)
+  shape       String    @default("rectangle") // rectangle, circle
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  orders      Order[]
+
+  @@map("tables")
+}
+
+model Order {
+  id            String    @id @default(uuid())
+  orderNumber   String    @unique @default(cuid())
+  status        String    @default("PENDING") // PENDING, IN_PROGRESS, READY, SERVED, BILL_REQUESTED, COMPLETED, CANCELLED
+  type          String    @default("DINE_IN") // DINE_IN, TAKEAWAY, DELIVERY
+  subtotal      Float     @default(0)
+  tax           Float     @default(0)
+  discount      Float     @default(0)
+  total         Float     @default(0)
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  completedAt   DateTime?
+
+  // Relations
+  tableId       String?
+  table         Table?    @relation(fields: [tableId], references: [id])
+  waiterId      String?
+  waiter        User?     @relation(fields: [waiterId], references: [id])
+  items         OrderItem[]
+  payments      Payment[]
+  invoice       Invoice?
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id            String   @id @default(uuid())
+  quantity      Int
+  unitPrice     Float
+  totalPrice    Float
+  notes         String?
+  status        String   @default("pending") // pending, preparing, ready, served
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id])
+  variantId     String?
+  variant       ProductVariant? @relation(fields: [variantId], references: [id])
+
+  @@map("order_items")
+}
+
+// ==================== PAYMENTS & INVOICING ====================
+
+model Payment {
+  id            String    @id @default(uuid())
+  amount        Float
+  method        String    // CASH, CARD, TRANSFER, MIXED
+  status        String    @default("PENDING") // PENDING, COMPLETED, FAILED, REFUNDED
+  reference     String?   // Transaction reference
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  orderId       String
+  order         Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model Invoice {
+  id             String    @id @default(uuid())
+  invoiceNumber  String    @unique
+  taxRate        Float     @default(0)
+  taxAmount      Float     @default(0)
+  subtotal       Float
+  total          Float
+  status         String    @default("PENDING") // PENDING, PAID, CANCELLED
+  customerName   String?
+  customerTaxId  String?   // RFC/NIT/Tax ID
+  customerAddress String?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Relations
+  orderId        String    @unique
+  order          Order     @relation(fields: [orderId], references: [id])
+
+  @@map("invoices")
+}
+
+// ==================== INVENTORY ====================
+
+model InventoryItem {
+  id            String    @id @default(uuid())
+  name          String
+  sku           String?   @unique
+  quantity      Float     @default(0)
+  unit          String    @default("unit") // kg, liters, units, etc.
+  minQuantity   Float     @default(0)
+  cost          Float     @default(0)
+  location      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  productId     String?
+  product       Product?  @relation(fields: [productId], references: [id])
+  movements     InventoryMovement[]
+
+  @@map("inventory_items")
+}
+
+model InventoryMovement {
+  id            String    @id @default(uuid())
+  quantity      Float
+  type          String    // IN, OUT, ADJUSTMENT, RETURN
+  reason        String?
+  reference     String?   // Order ID, Purchase ID, etc.
+  createdAt     DateTime  @default(now())
+
+  // Relations
+  itemId        String
+  item          InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@map("inventory_movements")
+}
+
+// ==================== SERVICES (for service businesses) ====================
+
+model Service {
+  id            String    @id @default(uuid())
+  name          String
+  description   String?
+  price         Float
+  duration      Int       // in minutes
+  active        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  appointments  Appointment[]
+
+  @@map("services")
+}
+
+model Appointment {
+  id            String    @id @default(uuid())
+  customerName  String
+  customerPhone String?
+  customerEmail String?
+  dateTime      DateTime
+  duration      Int       // in minutes
+  status        String    @default("scheduled") // scheduled, confirmed, completed, cancelled
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  serviceId     String
+  service       Service   @relation(fields: [serviceId], references: [id])
+
+  @@map("appointments")
+}
+
+// ==================== SETTINGS ====================
+
+model Setting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("settings")
+}
