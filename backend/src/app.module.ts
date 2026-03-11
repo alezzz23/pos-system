@@ -7,9 +7,18 @@ import { OrdersModule } from './orders/orders.module';
 import { TablesModule } from './tables/tables.module';
 import { UsersModule } from './users/users.module';
 import { InventoryModule } from './inventory/inventory.module';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
-  imports: [AuthModule, ProductsModule, OrdersModule, TablesModule, UsersModule, InventoryModule],
+  imports: [
+    AuthModule,
+    ProductsModule,
+    OrdersModule,
+    TablesModule,
+    UsersModule,
+    InventoryModule,
+    SettingsModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
