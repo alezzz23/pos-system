@@ -36,8 +36,10 @@ export class InventoryController {
 
   @Get()
   @ApiOperation({ summary: 'Listar artículos de inventario' })
-  findAllItems() {
-    return this.inventoryService.findAllItems();
+  findAllItems(@Query('page') page?: string, @Query('limit') limit?: string) {
+    const pageNumber = page ? parseInt(page, 10) : undefined;
+    const limitNumber = limit ? parseInt(limit, 10) : undefined;
+    return this.inventoryService.findAllItems(pageNumber, limitNumber);
   }
 
   @Get('summary')

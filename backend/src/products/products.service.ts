@@ -52,11 +52,17 @@ export class ProductsService {
     });
   }
 
-  async findAll(categoryId?: string) {
+  async findAll(categoryId?: string, page?: number, limit?: number) {
+    const safePage = page && page > 0 ? page : 1;
+    const safeLimit = limit && limit > 0 ? Math.min(limit, 100) : 50;
+    const skip = (safePage - 1) * safeLimit;
+
     return this.prisma.product.findMany({
       where: categoryId ? { categoryId } : undefined,
       include: { category: true, variants: true },
       orderBy: { sortOrder: 'asc' },
+      skip,
+      take: safeLimit,
     });
   }
 

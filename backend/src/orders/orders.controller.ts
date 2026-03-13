@@ -34,8 +34,12 @@ export class OrdersController {
   findAll(
     @Query('status') status?: string | string[],
     @Query('tableId') tableId?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
-    return this.ordersService.findAll(status, tableId);
+    const pageNumber = page ? parseInt(page, 10) : undefined;
+    const limitNumber = limit ? parseInt(limit, 10) : undefined;
+    return this.ordersService.findAll(status, tableId, pageNumber, limitNumber);
   }
 
   @Get('daily-summary')

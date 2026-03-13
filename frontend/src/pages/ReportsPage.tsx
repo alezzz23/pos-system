@@ -80,7 +80,6 @@ export default function ReportsPage() {
     );
   }
 
-  const totalWeekSales = salesData.reduce((sum, d) => sum + d.sales, 0);
   const maxSales = Math.max(...salesData.map((d) => d.sales), 1);
 
   return (

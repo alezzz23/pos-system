@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
 import InventoryItemFormDialog from "@/components/modals/InventoryItemFormDialog";
+import InventoryMovementDialog from "@/components/modals/InventoryMovementDialog";
 import type { InventoryItem } from "@/lib/types";
 
 interface InventorySummary {
@@ -35,6 +36,12 @@ export default function InventoryPage() {
   // Item modal state
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
+
+  // Movement modal state
+  const [movementDialogOpen, setMovementDialogOpen] = useState(false);
+  const [movementDefaultType, setMovementDefaultType] = useState<
+    "IN" | "OUT" | "ADJUSTMENT" | "RETURN"
+  >("IN");
 
   const fetchData = async () => {
     try {
@@ -86,6 +93,11 @@ export default function InventoryPage() {
     setItemDialogOpen(true);
   };
 
+  const openMovementDialog = (type: "IN" | "OUT") => {
+    setMovementDefaultType(type);
+    setMovementDialogOpen(true);
+  };
+
   const filteredItems = items.filter(
     (item) =>
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -110,11 +122,11 @@ export default function InventoryPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => openMovementDialog("IN")}>
             <ArrowUp className="w-4 h-4 mr-2" />
             Entrada
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => openMovementDialog("OUT")}>
             <ArrowDown className="w-4 h-4 mr-2" />
             Salida
           </Button>
@@ -289,6 +301,16 @@ export default function InventoryPage() {
         onSuccess={() => {
           fetchData();
           setEditingItem(null);
+        }}
+      />
+
+      <InventoryMovementDialog
+        open={movementDialogOpen}
+        onOpenChange={setMovementDialogOpen}
+        items={items}
+        defaultType={movementDefaultType}
+        onSuccess={() => {
+          fetchData();
         }}
       />
     </div>

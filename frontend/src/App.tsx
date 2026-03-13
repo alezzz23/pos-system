@@ -14,6 +14,7 @@ import InventoryPage from "@/pages/InventoryPage";
 import ReportsPage from "@/pages/ReportsPage";
 import UsersPage from "@/pages/UsersPage";
 import SettingsPage from "@/pages/SettingsPage";
+import KitchenPage from "@/pages/KitchenPage";
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
             <Route path="orders/:id" element={<OrderDetailPage />} />
             <Route path="menu" element={<MenuPage />} />
             <Route path="inventory" element={<InventoryPage />} />
+            <Route path="kitchen" element={<KitchenPage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="settings" element={<SettingsPage />} />

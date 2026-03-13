@@ -13,6 +13,16 @@ import { CreatePaymentDto } from './dto/create-payment.dto';
 export class OrdersService {
   constructor(private prisma: PrismaService) {}
 
+  private readonly allowedStatusTransitions: Record<string, string[]> = {
+    PENDING: ['IN_PROGRESS', 'CANCELLED'],
+    IN_PROGRESS: ['READY', 'CANCELLED'],
+    READY: ['SERVED', 'CANCELLED'],
+    SERVED: ['BILL_REQUESTED', 'COMPLETED', 'CANCELLED'],
+    BILL_REQUESTED: ['COMPLETED', 'CANCELLED'],
+    COMPLETED: [],
+    CANCELLED: [],
+  };
+
   async create(dto: CreateOrderDto, waiterId: string) {
     const order = await this.prisma.order.create({
       data: {
@@ -34,7 +44,12 @@ export class OrdersService {
     return order;
   }
 
-  async findAll(status?: string | string[], tableId?: string) {
+  async findAll(
+    status?: string | string[],
+    tableId?: string,
+    page?: number,
+    limit?: number,
+  ) {
     // Parse status - puede venir como string único, array, o string separado por comas
     let statusArray: string[] | undefined;
     if (status) {
@@ -50,6 +65,10 @@ export class OrdersService {
     // Solo filtrar por completedAt: null si NO estamos buscando pedidos completados
     const shouldFilterCompleted = !statusArray?.includes('COMPLETED');
 
+    const safePage = page && page > 0 ? page : 1;
+    const safeLimit = limit && limit > 0 ? Math.min(limit, 100) : 50;
+    const skip = (safePage - 1) * safeLimit;
+
     return this.prisma.order.findMany({
       where: {
         status: statusArray ? { in: statusArray as any[] } : undefined,
@@ -64,6 +83,8 @@ export class OrdersService {
         },
       },
       orderBy: { createdAt: 'desc' },
+      skip,
+      take: safeLimit,
     });
   }
 
@@ -134,6 +155,18 @@ export class OrdersService {
   }
 
   async updateStatus(id: string, status: string) {
+    const current = await this.prisma.order.findUnique({ where: { id } });
+    if (!current) throw new NotFoundException('Pedido no encontrado');
+
+    if (current.status === status) return current;
+
+    const allowed = this.allowedStatusTransitions[current.status] ?? [];
+    if (!allowed.includes(status)) {
+      throw new BadRequestException(
+        `Transición de estado inválida: ${current.status} -> ${status}`,
+      );
+    }
+
     const order = await this.prisma.order.update({
       where: { id },
       data: { status: status as any },

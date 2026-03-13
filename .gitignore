@@ -6,3 +6,6 @@ backend/prisma/dev.db
 backend/.env
 frontend/.env
 .env
+
+.agents/skills
+skills-lock.json

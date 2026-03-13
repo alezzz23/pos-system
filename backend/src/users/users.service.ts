@@ -28,7 +28,11 @@ export class UsersService {
     });
   }
 
-  async findAll(role?: string) {
+  async findAll(role?: string, page?: number, limit?: number) {
+    const safePage = page && page > 0 ? page : 1;
+    const safeLimit = limit && limit > 0 ? Math.min(limit, 100) : 50;
+    const skip = (safePage - 1) * safeLimit;
+
     return this.prisma.user.findMany({
       where: role ? { role: role as any } : undefined,
       select: {
@@ -44,6 +48,8 @@ export class UsersService {
         updatedAt: true,
       },
       orderBy: { createdAt: 'desc' },
+      skip,
+      take: safeLimit,
     });
   }
 

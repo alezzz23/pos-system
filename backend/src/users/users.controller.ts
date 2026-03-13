@@ -33,8 +33,14 @@ export class UsersController {
 
   @Get()
   @ApiOperation({ summary: 'Listar usuarios' })
-  findAll(@Query('role') role?: string) {
-    return this.usersService.findAll(role);
+  findAll(
+    @Query('role') role?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const pageNumber = page ? parseInt(page, 10) : undefined;
+    const limitNumber = limit ? parseInt(limit, 10) : undefined;
+    return this.usersService.findAll(role, pageNumber, limitNumber);
   }
 
   @Get(':id')
