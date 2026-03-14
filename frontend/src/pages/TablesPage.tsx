@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, MoreHorizontal, Plus, Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Users, MoreHorizontal, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
@@ -141,8 +142,47 @@ export default function TablesPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-8 w-56" />
+            <Skeleton className="mt-2 h-4 w-72" />
+          </div>
+          <Skeleton className="h-10 w-32 rounded-md" />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-40" />
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-4 gap-4">
+                  {Array.from({ length: 12 }).map((_, i) => (
+                    <Skeleton key={i} className="h-[108px] w-full rounded-xl" />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div>
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-44" />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <Skeleton className="h-20 w-full rounded-lg" />
+                  <Skeleton className="h-20 w-full rounded-lg" />
+                </div>
+                <Skeleton className="h-10 w-full rounded-md" />
+                <Skeleton className="h-10 w-full rounded-md" />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     );
   }
@@ -172,14 +212,16 @@ export default function TablesPage() {
             <CardContent>
               <div className="grid grid-cols-4 gap-4">
                 {tables.map((table) => (
-                  <button
+                  <div
                     key={table.id}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => handleTableClick(table)}
                     className={cn(
-                      "relative p-4 border-2 rounded-xl transition-all",
+                      "relative p-4 border-2 rounded-xl transition-all cursor-pointer hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
                       statusColors[table.status],
                       selectedTable?.id === table.id &&
-                        "ring-2 ring-primary ring-offset-2",
+                      "ring-2 ring-primary ring-offset-2",
                     )}
                   >
                     <div className="flex flex-col items-center">
@@ -194,10 +236,10 @@ export default function TablesPage() {
                         {statusLabels[table.status]}
                       </span>
                     </div>
-                    <button className="absolute top-2 right-2 p-1 hover:bg-white/50 rounded">
+                    <div className="absolute top-2 right-2 p-1 hover:bg-white/50 rounded">
                       <MoreHorizontal className="w-4 h-4" />
-                    </button>
-                  </button>
+                    </div>
+                  </div>
                 ))}
               </div>
             </CardContent>

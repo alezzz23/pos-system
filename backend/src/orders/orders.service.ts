@@ -44,12 +44,16 @@ export class OrdersService {
     return order;
   }
 
-  async findAll(
-    status?: string | string[],
-    tableId?: string,
-    page?: number,
-    limit?: number,
-  ) {
+  async findAll(params?: {
+    status?: string | string[];
+    tableId?: string;
+    waiterId?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const { status, tableId, waiterId, dateFrom, dateTo, page, limit } = params ?? {};
     // Parse status - puede venir como string único, array, o string separado por comas
     let statusArray: string[] | undefined;
     if (status) {
@@ -65,6 +69,14 @@ export class OrdersService {
     // Solo filtrar por completedAt: null si NO estamos buscando pedidos completados
     const shouldFilterCompleted = !statusArray?.includes('COMPLETED');
 
+    const createdAtFilter =
+      dateFrom || dateTo
+        ? {
+            ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
+            ...(dateTo ? { lte: new Date(dateTo) } : {}),
+          }
+        : undefined;
+
     const safePage = page && page > 0 ? page : 1;
     const safeLimit = limit && limit > 0 ? Math.min(limit, 100) : 50;
     const skip = (safePage - 1) * safeLimit;
@@ -73,6 +85,8 @@ export class OrdersService {
       where: {
         status: statusArray ? { in: statusArray as any[] } : undefined,
         tableId,
+        waiterId,
+        createdAt: createdAtFilter,
         completedAt: shouldFilterCompleted ? null : undefined,
       },
       include: {

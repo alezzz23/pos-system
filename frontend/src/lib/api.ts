@@ -17,6 +17,15 @@ class ApiClient {
     return localStorage.getItem('token');
   }
 
+  private handleUnauthorized() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+
+    if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+      window.location.assign('/login');
+    }
+  }
+
   async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
     const { method = 'GET', body, headers = {} } = options;
 
@@ -37,6 +46,10 @@ class ApiClient {
     }
 
     const response = await fetch(`${this.baseUrl}${endpoint}`, config);
+
+    if (response.status === 401) {
+      this.handleUnauthorized();
+    }
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Request failed' }));

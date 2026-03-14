@@ -31,10 +31,15 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="fixed inset-0 -z-10">
+        <div className="absolute inset-0 bg-[radial-gradient(1200px_circle_at_20%_-10%,hsla(var(--primary),0.25),transparent_55%),radial-gradient(900px_circle_at_80%_10%,hsla(var(--foreground),0.12),transparent_60%)]" />
+        <div className="absolute inset-0 opacity-[0.45] [background-image:linear-gradient(to_right,hsla(var(--foreground),0.06)_1px,transparent_1px),linear-gradient(to_bottom,hsla(var(--foreground),0.06)_1px,transparent_1px)] bg-[size:44px_44px]" />
+      </div>
+
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
+          <div className="mx-auto mb-4 w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-sm">
             <UtensilsCrossed className="w-6 h-6 text-white" />
           </div>
           <CardTitle className="text-2xl">POS System</CardTitle>
@@ -43,7 +48,7 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+              <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-lg">
                 {error}
               </div>
             )}
@@ -68,7 +73,7 @@ export default function LoginPage() {
                 required
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full active:scale-[0.99] transition-transform" disabled={isLoading}>
               {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
             </Button>
           </form>

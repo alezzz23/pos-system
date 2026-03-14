@@ -42,12 +42,13 @@ Organizado por prioridad y área de trabajo.
       - [ ] Agregar selector de rango de fechas funcional
       - [ ] Implementar botón "Exportar" (CSV o PDF)
 
-- [ ] **[SETTINGS]** `SettingsPage.tsx` tiene campos con valores hardcodeados y el botón
+- [x] **[SETTINGS]** `SettingsPage.tsx` tiene campos con valores hardcodeados y el botón
       "Guardar Cambios" no hace nada. Necesita:
       - Endpoint backend: `GET /settings` (leer configuración)
       - Endpoint backend: `PUT /settings` (guardar configuración)
       - Conectar el formulario a la API
       - Cargar valores reales al montar el componente
+      ✅ **COMPLETADO** - SettingsModule (GET/PUT /settings) creado y SettingsPage conectado a API.
 
 ---
 
@@ -111,10 +112,11 @@ Organizado por prioridad y área de trabajo.
       - ✅ Conectado a `POST /inventory` y `PUT /inventory/:id`
       - ✅ Botones editar/eliminar integrados en InventoryPage
 
-- [ ] **[INVENTORY]** Modal "Registrar Movimiento" (Entrada / Salida / Ajuste):
+- [x] **[INVENTORY]** Modal "Registrar Movimiento" (Entrada / Salida / Ajuste):
       - Campos: cantidad, tipo (IN/OUT/ADJUSTMENT/RETURN), motivo, referencia
       - Botones "Entrada" y "Salida" en la página deben abrir este modal
       - Conectar a `POST /inventory/:id/movements`
+      ✅ **COMPLETADO** - `InventoryMovementDialog` creado y botones Entrada/Salida conectados.
 
 ### Flujos de operación en mesas
 
@@ -132,12 +134,13 @@ Organizado por prioridad y área de trabajo.
 
 ### Vista de cocina
 
-- [ ] **Crear vista `/kitchen`** (o dashboard alternativo para rol KITCHEN):
+- [x] **Crear vista `/kitchen`** (o dashboard alternativo para rol KITCHEN):
       - Ver pedidos en estado `PENDING` e `IN_PROGRESS` en tiempo real
       - Ordenados por hora de creación (más antiguo primero)
       - Botón por pedido para cambiar a `IN_PROGRESS` → `READY`
       - Visualización clara de los items de cada pedido y sus notas
       - Auto-refresh cada X segundos (o WebSocket si se implementa)
+      ✅ **COMPLETADO** - KitchenPage creada con auto-refresh y transiciones IN_PROGRESS→READY.
 
 ---
 
@@ -201,16 +204,19 @@ el componente wrapper creado en `frontend/src/components/ui/`.
 
 ### Validaciones y robustez
 
-- [ ] **Máquina de estados en pedidos** — Validar transiciones permitidas en
+- [x] **Máquina de estados en pedidos** — Validar transiciones permitidas en
       `updateStatus()`. Ej: no se puede pasar de `COMPLETED` a `PENDING`,
       ni de `CANCELLED` a `IN_PROGRESS`. Rechazar con `BadRequestException`.
+      ✅ **COMPLETADO** - Validación de transiciones implementada en `OrdersService.updateStatus()`.
 
-- [ ] **Paginación** — Agregar `page` y `limit` query params a los endpoints de listado:
+- [x] **Paginación** — Agregar `page` y `limit` query params a los endpoints de listado:
       `/orders`, `/products`, `/users`, `/inventory`
+      ✅ **COMPLETADO** - `page/limit` implementados con `skip/take` y defaults seguros.
 
-- [ ] **Endpoint de settings en backend** — Crear `SettingsModule` con:
+- [x] **Endpoint de settings en backend** — Crear `SettingsModule` con:
       - `GET /settings` — Leer todos los settings
       - `PUT /settings` — Actualizar settings por clave
+      ✅ **COMPLETADO** - SettingsModule integrado en AppModule.
 
 ### Filtros y búsqueda
 
@@ -312,8 +318,11 @@ el componente wrapper creado en `frontend/src/components/ui/`.
 | ✅ P2 | UI | Componentes ui completos (dialog, select, toast, badge, textarea, tabs, dropdown, separator, alert) — **COMPLETADO** |
 | ✅ P2 | UI | Modal CRUD de categorías — **COMPLETADO** |
 | ✅ P2 | UI | Modales de CRUD completos (categorías, productos, mesas, usuarios, inventario) — **COMPLETADO** |
-| 🟢 P3 | Backend | Paginación en endpoints de listado |
-| 🟢 P3 | UI | Vista de cocina `/kitchen` |
+| ✅ P3 | Backend | Paginación en endpoints de listado — **COMPLETADO** |
+| ✅ P3 | UI | Vista de cocina `/kitchen` — **COMPLETADO** |
+| ✅ P3 | Backend | Endpoint de settings en backend — **COMPLETADO** |
+| ✅ P3 | Backend | Modal CRUD de movimientos de inventario — **COMPLETADO** |
+| ✅ P3 | Backend | Máquina de estados en pedidos — **COMPLETADO** |
 | 🟢 P3 | UX | Auto-refresh en Dashboard, Mesas y Pedidos |
 | 🟢 P3 | UX | Toasts de feedback en todas las acciones |
 | 🔵 P4 | Config | Archivos `.env.example` y corrección del README |

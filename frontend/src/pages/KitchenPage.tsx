@@ -6,6 +6,7 @@ import { Loader2, RefreshCw, ChefHat, Clock } from "lucide-react";
 import { api } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
+import { EmptyState } from "@/components/ui/empty-state";
 import type { Order, OrderStatus } from "@/lib/types";
 
 const statusLabel: Record<string, string> = {
@@ -91,8 +92,8 @@ export default function KitchenPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Cocina (KDS)</h1>
-          <p className="text-gray-500">
+          <h1 className="text-2xl font-bold">Cocina (KDS)</h1>
+          <p className="text-muted-foreground">
             {orders.length} pedidos activos ({pendingCount} pendientes)
           </p>
         </div>
@@ -107,9 +108,21 @@ export default function KitchenPage() {
       </div>
 
       {orders.length === 0 ? (
-        <div className="text-gray-500 text-center py-16">
-          No hay pedidos pendientes en cocina.
-        </div>
+        <EmptyState
+          title="Sin pedidos en cocina"
+          description="Cuando entren pedidos en PENDIENTE o EN PREPARACIÓN, se mostrarán aquí."
+          icon={ChefHat}
+          action={
+            <Button variant="outline" onClick={() => fetchOrders()} disabled={isRefreshing}>
+              {isRefreshing ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4 mr-2" />
+              )}
+              Refrescar
+            </Button>
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {orders.map((order) => (
@@ -120,7 +133,7 @@ export default function KitchenPage() {
                     <CardTitle className="text-base">
                       #{order.orderNumber || order.id.slice(0, 8)}
                     </CardTitle>
-                    <div className="text-sm text-gray-500 mt-1">
+                    <div className="text-sm text-muted-foreground mt-1">
                       {order.type === "DINE_IN"
                         ? order.table
                           ? `Mesa ${order.table.number}`
@@ -129,7 +142,7 @@ export default function KitchenPage() {
                           ? "Para llevar"
                           : "Delivery"}
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-400 mt-2">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2 tabular-nums">
                       <Clock className="w-3 h-3" />
                       {formatDate(order.createdAt)}
                     </div>
@@ -144,24 +157,24 @@ export default function KitchenPage() {
                 <div className="space-y-2">
                   {order.items?.length ? (
                     order.items.map((item) => (
-                      <div key={item.id} className="p-3 bg-gray-50 rounded-lg">
+                      <div key={item.id} className="p-3 bg-accent/40 rounded-lg">
                         <div className="flex items-start justify-between gap-4">
                           <div>
                             <div className="font-medium">
                               {item.quantity}x {item.product?.name || item.productId}
                             </div>
                             {item.notes && (
-                              <div className="text-sm text-gray-500 mt-1">
+                              <div className="text-sm text-muted-foreground mt-1">
                                 Nota: {item.notes}
                               </div>
                             )}
                           </div>
-                          <ChefHat className="w-4 h-4 text-gray-400" />
+                          <ChefHat className="w-4 h-4 text-muted-foreground" />
                         </div>
                       </div>
                     ))
                   ) : (
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-muted-foreground">
                       Sin items (verifica include de items en backend).
                     </div>
                   )}

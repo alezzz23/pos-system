@@ -15,6 +15,10 @@ import {
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
+import { useToast } from "@/components/ui/use-toast";
+import { RefreshCw } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Order, OrderStatus } from "@/lib/types";
 
 const statusConfig: Record<
@@ -60,24 +64,37 @@ const statusConfig: Record<
 
 export default function OrdersPage() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "ALL">("ALL");
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const fetchOrders = async (silent = false) => {
+    if (!silent) setIsRefreshing(true);
+    try {
+      const data = await api.get<Order[]>("/orders");
+      // Sort newest first
+      data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setOrders(data);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      toast({
+        title: "Error",
+        description: "Error al cargar los pedidos.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const data = await api.get<Order[]>("/orders");
-        setOrders(data);
-      } catch (error) {
-        console.error("Error fetching orders:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchOrders();
+    fetchOrders(true);
+    const interval = setInterval(() => fetchOrders(true), 15000);
+    return () => clearInterval(interval);
   }, []);
 
   const updateStatus = async (orderId: string, newStatus: OrderStatus) => {
@@ -86,8 +103,18 @@ export default function OrdersPage() {
       setOrders(
         orders.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)),
       );
+      toast({
+        title: "Estado actualizado",
+        description: `El pedido fue marcado como ${statusConfig[newStatus].label}.`,
+        variant: "success",
+      });
     } catch (error) {
       console.error("Error updating order status:", error);
+      toast({
+        title: "Error",
+        description: "Ocurrió un error al actualizar el estado.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -106,8 +133,62 @@ export default function OrdersPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-8 w-56" />
+            <Skeleton className="mt-2 h-4 w-40" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-28 rounded-md" />
+            <Skeleton className="h-10 w-36 rounded-md" />
+          </div>
+        </div>
+
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <Skeleton key={i} className="h-9 w-28 rounded-md" />
+          ))}
+        </div>
+
+        <div className="relative max-w-md">
+          <Skeleton className="h-11 w-full rounded-lg" />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="rounded-xl border bg-card p-4">
+              <div className="flex items-start justify-between mb-3">
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-28" />
+                  <Skeleton className="h-4 w-40" />
+                </div>
+                <Skeleton className="h-6 w-20 rounded-full" />
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+                <div className="flex justify-between">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+                <div className="flex justify-between pt-2 border-t">
+                  <Skeleton className="h-5 w-16" />
+                  <Skeleton className="h-5 w-28" />
+                </div>
+              </div>
+              <div className="flex items-center justify-between mt-4 pt-3 border-t">
+                <Skeleton className="h-3 w-24" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-8 w-16 rounded-md" />
+                  <Skeleton className="h-8 w-12 rounded-md" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -121,10 +202,20 @@ export default function OrdersPage() {
           </h1>
           <p className="text-gray-500">{activeOrders} pedidos activos</p>
         </div>
-        <Button onClick={() => navigate("/orders/new")}>
-          <Plus className="w-4 h-4 mr-2" />
-          Nuevo Pedido
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => fetchOrders()} disabled={isRefreshing}>
+            {isRefreshing ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4 mr-2" />
+            )}
+            Actualizar
+          </Button>
+          <Button onClick={() => navigate("/orders/new")}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nuevo Pedido
+          </Button>
+        </div>
       </div>
 
       {/* Status Tabs */}
@@ -163,7 +254,13 @@ export default function OrdersPage() {
 
       {/* Orders Grid */}
       {filteredOrders.length === 0 ? (
-        <p className="text-gray-500 text-center py-8">No hay pedidos</p>
+        <EmptyState
+          title="Aún no hay pedidos"
+          description="Cuando crees un pedido, aparecerá aquí para gestionarlo."
+          action={
+            <Button onClick={() => navigate("/orders/new")}>Crear pedido</Button>
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredOrders.map((order) => {
@@ -205,22 +302,22 @@ export default function OrdersPage() {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-500">Subtotal:</span>
-                      <span>{formatCurrency(order.subtotal)}</span>
+                      <span className="tabular-nums">{formatCurrency(order.subtotal)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500">Impuesto:</span>
-                      <span>{formatCurrency(order.tax)}</span>
+                      <span className="tabular-nums">{formatCurrency(order.tax)}</span>
                     </div>
                     <div className="flex justify-between font-bold text-base pt-2 border-t">
                       <span>Total:</span>
-                      <span className="text-primary-600">
+                      <span className="text-primary-600 tabular-nums">
                         {formatCurrency(order.total)}
                       </span>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between mt-4 pt-3 border-t">
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-gray-400 tabular-nums">
                       {formatDate(order.createdAt)}
                     </span>
                     <div className="flex gap-2">

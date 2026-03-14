@@ -55,12 +55,13 @@ export class ProductsController {
   @ApiOperation({ summary: 'Listar productos' })
   findAll(
     @Query('categoryId') categoryId?: string,
+    @Query('search') search?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
     const pageNumber = page ? parseInt(page, 10) : undefined;
     const limitNumber = limit ? parseInt(limit, 10) : undefined;
-    return this.productsService.findAll(categoryId, pageNumber, limitNumber);
+    return this.productsService.findAll({ categoryId, search, page: pageNumber, limit: limitNumber });
   }
 
   @Get('available')

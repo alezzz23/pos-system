@@ -34,12 +34,23 @@ export class OrdersController {
   findAll(
     @Query('status') status?: string | string[],
     @Query('tableId') tableId?: string,
+    @Query('waiterId') waiterId?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
     const pageNumber = page ? parseInt(page, 10) : undefined;
     const limitNumber = limit ? parseInt(limit, 10) : undefined;
-    return this.ordersService.findAll(status, tableId, pageNumber, limitNumber);
+    return this.ordersService.findAll({
+      status,
+      tableId,
+      waiterId,
+      dateFrom,
+      dateTo,
+      page: pageNumber,
+      limit: limitNumber,
+    });
   }
 
   @Get('daily-summary')

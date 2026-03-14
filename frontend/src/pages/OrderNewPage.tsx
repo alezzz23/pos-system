@@ -3,10 +3,10 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { ArrowLeft, Plus, Minus, Trash2, Loader2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { api } from '@/lib/api';
+import { useToast } from '@/components/ui/use-toast';
 import type { Product, Category, Table } from '@/lib/types';
 
 interface OrderItem {
@@ -20,6 +20,7 @@ export default function OrderNewPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const tableId = searchParams.get('tableId');
+  const { toast } = useToast();
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -99,7 +100,11 @@ export default function OrderNewPage() {
 
   const handleCreateOrder = async () => {
     if (orderItems.length === 0) {
-      alert('Agrega al menos un producto al pedido');
+      toast({
+        title: "Error",
+        description: "Agrega al menos un producto al pedido.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -123,11 +128,20 @@ export default function OrderNewPage() {
         )
       );
 
+      toast({
+        title: "Pedido creado",
+        description: `El pedido se ha creado exitosamente.`,
+      });
+
       // Navegar al detalle del pedido o volver a mesas
       navigate(tableId ? '/tables' : '/orders');
     } catch (error) {
       console.error('Error creating order:', error);
-      alert('Error al crear el pedido');
+      toast({
+        title: "Error",
+        description: "Ocurrió un error al crear el pedido.",
+        variant: "destructive",
+      });
     } finally {
       setIsSaving(false);
     }
@@ -259,7 +273,7 @@ export default function OrderNewPage() {
         </div>
 
         {/* Resumen del pedido */}
-        <div>
+        <div className="space-y-4">
           <Card className="sticky top-6">
             <CardHeader>
               <CardTitle className="text-lg">Resumen del Pedido</CardTitle>
@@ -317,29 +331,26 @@ export default function OrderNewPage() {
                 </div>
               )}
 
-              {/* Totales */}
-              {orderItems.length > 0 && (
-                <>
-                  <div className="space-y-2 pt-3 border-t">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Subtotal:</span>
-                      <span>{formatCurrency(totals.subtotal)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">IVA (16%):</span>
-                      <span>{formatCurrency(totals.tax)}</span>
-                    </div>
-                    <div className="flex justify-between font-bold text-lg pt-2 border-t">
-                      <span>Total:</span>
-                      <span className="text-primary-600">
-                        {formatCurrency(totals.total)}
-                      </span>
-                    </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Resumen</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Subtotal</span>
+                    <span className="tabular-nums">{formatCurrency(totals.subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Impuesto (16%)</span>
+                    <span className="tabular-nums">{formatCurrency(totals.tax)}</span>
                   </div>
 
-                  {/* Notas */}
-                  <div className="space-y-2">
-                    <Label htmlFor="notes">Notas del pedido</Label>
+                  <div className="flex justify-between font-bold text-lg pt-2 border-t">
+                    <span>Total</span>
+                    <span className="text-primary-600 tabular-nums">{formatCurrency(totals.total)}</span>
+                  </div>
+
+                  <div>
                     <Input
                       id="notes"
                       placeholder="Instrucciones especiales..."
@@ -363,8 +374,8 @@ export default function OrderNewPage() {
                       'Crear Pedido'
                     )}
                   </Button>
-                </>
-              )}
+                </CardContent>
+              </Card>
             </CardContent>
           </Card>
         </div>
