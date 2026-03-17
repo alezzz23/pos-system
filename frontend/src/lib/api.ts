@@ -6,6 +6,27 @@ interface RequestOptions {
   headers?: Record<string, string>;
 }
 
+interface ApiErrorResponse {
+  statusCode: number;
+  message: string;
+  errors?: string[];
+  path?: string;
+}
+
+export class ApiError extends Error {
+  statusCode: number;
+  errors?: string[];
+  path?: string;
+
+  constructor(response: ApiErrorResponse) {
+    super(response.message);
+    this.name = 'ApiError';
+    this.statusCode = response.statusCode;
+    this.errors = response.errors;
+    this.path = response.path;
+  }
+}
+
 class ApiClient {
   private baseUrl: string;
 
@@ -52,8 +73,16 @@ class ApiClient {
     }
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Request failed' }));
-      throw new Error(error.message || `HTTP error! status: ${response.status}`);
+      const errorData = await response.json().catch(() => ({
+        statusCode: response.status,
+        message: 'Error de conexión con el servidor',
+      }));
+      throw new ApiError({
+        statusCode: errorData.statusCode || response.status,
+        message: errorData.message || `Error HTTP: ${response.status}`,
+        errors: errorData.errors,
+        path: errorData.path,
+      });
     }
 
     return response.json();

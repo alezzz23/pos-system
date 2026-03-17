@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { defaultRouteByRole } from '@/lib/permissions';
+import type { UserRole } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,7 +24,10 @@ export default function LoginPage() {
 
     try {
       await login({ email, password });
-      navigate('/');
+      // Get the user from localStorage since it was just set by login
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const role = (storedUser.role || 'WAITER') as UserRole;
+      navigate(defaultRouteByRole[role]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al iniciar sesión');
     } finally {

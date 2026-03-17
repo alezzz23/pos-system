@@ -2,6 +2,8 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme, type ThemeMode } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
+import { canSeeNavItem } from '@/lib/permissions';
+import type { UserRole } from '@/lib/types';
 import {
   LayoutDashboard,
   Users,
@@ -20,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import GlobalSearch from '@/components/layout/GlobalSearch';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,11 +44,22 @@ const navItems = [
   { to: '/settings', icon: Settings, label: 'Configuración' },
 ];
 
+const roleLabels: Record<UserRole, string> = {
+  ADMIN: 'Administrador',
+  MANAGER: 'Gerente',
+  WAITER: 'Mesero',
+  KITCHEN: 'Cocina',
+  CASHIER: 'Cajero',
+};
+
 export default function Layout() {
   const { user, logout } = useAuth();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const userRole = (user?.role || 'WAITER') as UserRole;
+  const filteredNavItems = navItems.filter(item => canSeeNavItem(userRole, item.to));
 
   const handleLogout = async () => {
     await logout();
@@ -87,7 +101,7 @@ export default function Layout() {
         </div>
 
         <nav className="p-4 space-y-1">
-          {navItems.map((item) => (
+          {filteredNavItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -119,7 +133,7 @@ export default function Layout() {
               <p className="text-sm font-medium truncate">
                 {user?.firstName} {user?.lastName}
               </p>
-              <p className="text-xs text-muted-foreground">{user?.role}</p>
+              <p className="text-xs text-muted-foreground">{roleLabels[userRole]}</p>
             </div>
           </div>
 
@@ -178,15 +192,16 @@ export default function Layout() {
 
       {/* Main content */}
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-30 h-16 bg-background border-b border-border flex items-center px-4">
+        <header className="sticky top-0 z-30 h-16 bg-background border-b border-border flex items-center gap-4 px-4">
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden"
+            className="lg:hidden flex-shrink-0"
             onClick={() => setSidebarOpen(true)}
           >
             <Menu className="w-5 h-5" />
           </Button>
+          <GlobalSearch />
         </header>
         <main className="p-6">
           <Outlet />

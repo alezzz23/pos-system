@@ -14,6 +14,7 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto, AddOrderItemDto, CreatePaymentDto } from './dto';
+import { ApplyDiscountDto } from './dto/apply-discount.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('orders')
@@ -21,7 +22,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @UseGuards(JwtAuthGuard)
 @Controller('orders')
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(private readonly ordersService: OrdersService) { }
 
   @Post()
   @ApiOperation({ summary: 'Crear pedido' })
@@ -132,5 +133,11 @@ export class OrdersController {
   @ApiOperation({ summary: 'Cancelar pedido' })
   cancel(@Param('id') id: string, @Body('reason') reason?: string) {
     return this.ordersService.cancel(id, reason);
+  }
+
+  @Post(':id/discount')
+  @ApiOperation({ summary: 'Aplicar descuento al pedido' })
+  applyDiscount(@Param('id') id: string, @Body() dto: ApplyDiscountDto) {
+    return this.ordersService.applyDiscount(id, dto);
   }
 }

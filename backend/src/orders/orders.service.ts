@@ -8,10 +8,11 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { AddOrderItemDto } from './dto/add-order-item.dto';
 import { CreatePaymentDto } from './dto/create-payment.dto';
+import { ApplyDiscountDto } from './dto/apply-discount.dto';
 
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   private readonly allowedStatusTransitions: Record<string, string[]> = {
     PENDING: ['IN_PROGRESS', 'CANCELLED'],
@@ -72,9 +73,9 @@ export class OrdersService {
     const createdAtFilter =
       dateFrom || dateTo
         ? {
-            ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
-            ...(dateTo ? { lte: new Date(dateTo) } : {}),
-          }
+          ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
+          ...(dateTo ? { lte: new Date(dateTo) } : {}),
+        }
         : undefined;
 
     const safePage = page && page > 0 ? page : 1;
@@ -297,15 +298,64 @@ export class OrdersService {
       where: { orderId },
     });
 
+    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
     const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
+    const discount = order?.discount || 0;
     const taxRate = 0.16;
-    const tax = subtotal * taxRate;
-    const total = subtotal + tax;
+    const taxableAmount = Math.max(subtotal - discount, 0);
+    const tax = taxableAmount * taxRate;
+    const total = taxableAmount + tax;
 
     return this.prisma.order.update({
       where: { id: orderId },
       data: { subtotal, tax, total },
     });
+  }
+
+  async applyDiscount(orderId: string, dto: ApplyDiscountDto) {
+    const order = await this.findOne(orderId);
+    if (order.status === 'COMPLETED' || order.status === 'CANCELLED') {
+      throw new BadRequestException(
+        'No se puede aplicar descuento a un pedido completado o cancelado',
+      );
+    }
+
+    let discountAmount: number;
+    if (dto.type === 'PERCENTAGE') {
+      if (dto.value > 100) {
+        throw new BadRequestException('El porcentaje de descuento no puede ser mayor a 100%');
+      }
+      discountAmount = (order.subtotal * dto.value) / 100;
+    } else {
+      if (dto.value > order.subtotal) {
+        throw new BadRequestException('El descuento no puede ser mayor al subtotal');
+      }
+      discountAmount = dto.value;
+    }
+
+    const taxRate = 0.16;
+    const taxableAmount = Math.max(order.subtotal - discountAmount, 0);
+    const tax = taxableAmount * taxRate;
+    const total = taxableAmount + tax;
+
+    const updated = await this.prisma.order.update({
+      where: { id: orderId },
+      data: {
+        discount: discountAmount,
+        tax,
+        total,
+        notes: dto.reason
+          ? `${order.notes ? order.notes + ' | ' : ''}Descuento: ${dto.reason}`
+          : order.notes,
+      },
+      include: {
+        table: true,
+        items: { include: { product: true } },
+        payments: true,
+      },
+    });
+
+    return updated;
   }
 
   async getDailySummary(date?: Date) {
